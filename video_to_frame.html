@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Upload and Display</title>
+    <style>
+        /* Resetting some default styles */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to bottom right, #00203F, #ADEFD1);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        #main {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 2rem;
+            border-radius: 10px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #ADEFD1;
+        }
+
+        #vid_form {
+            margin-top: 1rem;
+        }
+
+        #input_form form {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+            padding: 1rem;
+        }
+
+        label {
+            font-size: 1rem;
+            text-align: left;
+            color: #ADEFD1;
+        }
+
+        input[type="email"],
+        input[type="number"],
+        input[type="file"],
+        button {
+            padding: 0.7rem;
+            border: none;
+            border-radius: 5px;
+            font-size: 1rem;
+        }
+
+        input[type="email"],
+        input[type="number"] {
+            background: rgba(255, 255, 255, 0.9);
+            color: #00203F;
+        }
+
+        input[type="file"] {
+            color: #00203F;
+            cursor: pointer;
+        }
+
+        button {
+            background-color: #ADEFD1;
+            color: #00203F;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: #00B5B5;
+            transform: scale(1.05);
+        }
+
+        #show_video {
+            margin-top: 2rem;
+            display: none; /* Hidden by default until video is uploaded */
+        }
+
+        video {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 2px solid #ADEFD1;
+        }
+
+        footer {
+            margin-top: 2rem;
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+    </style>
+</head>
+<body>
+    <div id="main">
+        <h1>Video Frame Extractor</h1>
+        <div id="vid_form">
+            <div id="input_form">
+                <form id="uploadForm" method="POST" action="/video_to_frame" enctype="multipart/form-data">
+                    <label for="recipient">Enter Your Email:</label>
+                    <input type="email" name="recipient" id="recipient" placeholder="example@gmail.com" required>
+                    
+                    <label for="number1">Enter Time (in seconds):</label>
+                    <input type="number" name="number1" id="min" placeholder="e.g., 10" required>
+                    
+                    <label for="video_input">Choose a Video:</label>
+                    <input type="file" name="video_input" id="videoInput" accept="video/*">
+                    
+                    <button type="submit">Upload</button>
+                </form>
+            </div>
+            <div id="show_video">
+                <h2>Uploaded Video Preview</h2>
+                <video id="uploadedVideo" controls loop>
+                    <source src="" type="video/mp4">
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
+        <footer>
+            &copy; 2024 Video Frame Extractor - Designed by You
+        </footer>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const videoInput = document.getElementById('videoInput');
+            const uploadedVideo = document.getElementById('uploadedVideo');
+            const uploadForm = document.getElementById('uploadForm');
+            const showVideoDiv = document.getElementById('show_video');
+
+            // Preview video when file is selected
+            videoInput.addEventListener('change', function (event) {
+                const file = event.target.files[0];
+                if (file) {
+                    const objectURL = URL.createObjectURL(file);
+                    uploadedVideo.src = objectURL;
+                    showVideoDiv.style.display = 'block'; // Show the video preview
+                }
+            });
+
+            // Handle form submission
+            uploadForm.addEventListener('submit', function (event) {
+                event.preventDefault();
+                const formData = new FormData(uploadForm);
+                fetch('/video_to_frame', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Video uploaded and processed successfully!');
+                    console.log('Upload successful:', data);
+                })
+                .catch(error => {
+                    alert('Error uploading video. Please try again.');
+                    console.error('Error uploading video:', error);
+                });
+            });
+        });
+    </script>
+</body>
+</html>
