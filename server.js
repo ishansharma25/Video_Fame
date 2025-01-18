@@ -4,6 +4,8 @@ const bodyParser=require('body-parser');
 const nodemailer=require('nodemailer');
 const cloudinary = require('cloudinary').v2;
 
+
+
 var app = express();
 const { PythonShell } = require('python-shell');
 
@@ -16,6 +18,17 @@ app.use(bodyParser.json()); // Parse JSON bodies
 
 const port=3000;
 
+require('dotenv').config(); // Load .env variables
+console.log('Loaded Environment Variables:', process.env);
+
+
+console.log({
+    CLOUD_NAME: process.env.CLOUDINARY_CLOUD_NAME,
+    API_KEY: process.env.CLOUDINARY_API_KEY,
+    API_SECRET: process.env.CLOUDINARY_API_SECRET
+});
+
+/*
 cloudinary.config({
     cloud_name: "dfad2oppz",
     api_key: "562573676845481",
@@ -29,10 +42,25 @@ let transporter =nodemailer.createTransport({
     auth:
     {
         user: 'ishan2507sharma@gmail.com', // Your Gmail email address
-        pass: 'ymys gvzg wmjx qcmz' // Your Gmail password or application-specific password
+        pass: 'vybd zewp lkwc aakn' // Your Gmail password or application-specific password
     }
+});*/
+
+// Cloudinary Configuration
+cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET
 });
 
+// Gmail Transporter Configuration
+let transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.GMAIL_USER, // Load Gmail user from .env
+        pass: process.env.GMAIL_PASSWORD // Load Gmail password from .env
+    }
+});
 
 async function sendMail(to,text,url)
 {
