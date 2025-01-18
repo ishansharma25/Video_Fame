@@ -28,23 +28,7 @@ console.log({
     API_SECRET: process.env.CLOUDINARY_API_SECRET
 });
 
-/*
-cloudinary.config({
-    cloud_name: "dfad2oppz",
-    api_key: "562573676845481",
-    api_secret: "0M_QJ_phoJotcnteN1lmBTd7NZA"
-});
 
-
-
-let transporter =nodemailer.createTransport({
-    service:'gmail',
-    auth:
-    {
-        user: 'ishan2507sharma@gmail.com', // Your Gmail email address
-        pass: 'vybd zewp lkwc aakn' // Your Gmail password or application-specific password
-    }
-});*/
 
 // Cloudinary Configuration
 cloudinary.config({
