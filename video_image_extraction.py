@@ -1,68 +1,86 @@
-
-
 import sys
 import cloudinary
 from cloudinary.uploader import upload
 from cloudinary.utils import cloudinary_url
 import cv2 as cv
-
 from io import BytesIO
-
-# Define a custom logging function
-def console_log(*args):
-    for arg in args:
-        sys.stdout.write(str(arg))
-        sys.stdout.write(' ')  # Add a space between arguments
-    sys.stdout.write('\n')  # Add a newline after all arguments
-
+from urllib.parse import unquote
+import os
+from dotenv import load_dotenv
+# Load environment variables
+load_dotenv()
 
 # Configure Cloudinary
 cloudinary.config(
-  cloud_name= "dfad2oppz",
-  api_key= "562573676845481",
-  api_secret="0M_QJ_phoJotcnteN1lmBTd7NZA"
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET')
 )
 
-def process_video_to_image(video_path, start_time=None):
-   
-
+def process_video_to_image(video_url, start_time=None):
     try:
-        video_url,options=cloudinary_url(video_path,resource_type="video")
+        # Decode URL if needed
+        video_url = unquote(video_url)
+        
+        # Open video capture
         capture = cv.VideoCapture(video_url)
+        
+        if not capture.isOpened():
+            raise Exception("Failed to open video stream")
+            
         frame_rate = capture.get(cv.CAP_PROP_FPS)
-      
-
+        
+        # Set frame position
         if start_time is not None:
-           
-            start_frame = int(start_time * frame_rate)
+            start_frame = int(float(start_time) * frame_rate)
             capture.set(cv.CAP_PROP_POS_FRAMES, start_frame)
-        else:
-           
-            start_frame = 0
-
-
+        
+        # Read frame
         ret, frame = capture.read()
-        if  ret:
-            #print("Frame retrieved successfully")
-            _,image_data=cv.imencode('.jpg',frame)
-            image_data_bytes = image_data.tobytes()
+        if not ret:
+            raise Exception("Failed to read frame")
+            
+        # Convert frame to jpg
+        _, image_data = cv.imencode('.jpg', frame)
+        image_data_bytes = image_data.tobytes()
+        
+        # Release video capture
         capture.release()
-        response = upload(BytesIO(image_data_bytes), folder="extracted_images")
-        #print("Image uploaded to Cloudinary:", response['secure_url'])
-        return response['secure_url']
-
+        
+        # Upload to Cloudinary
+        upload_result = upload(
+            BytesIO(image_data_bytes), 
+            folder="extracted_images",
+            resource_type="image"
+        )
+        
+        return upload_result['secure_url']
+        
     except Exception as e:
-        print("Error:", e)
+        sys.stderr.write(f"Error: {str(e)}\n")
+        return None
+    finally:
+        if 'capture' in locals():
+            capture.release()
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print("Usage: python resize_and_convert_to_bw.py <image_url>")
+    try:
+        # Validate arguments
+        if len(sys.argv) != 3:
+            raise Exception("Usage: python video_image_extraction.py <video_url> <start_time>")
+            
+        video_url = sys.argv[1]
+        start_time = sys.argv[2]
+        
+        # Process video and get image URL
+        processed_url = process_video_to_image(video_url, start_time)
+        
+        if processed_url:
+            # Print only the URL without any prefix
+            print(processed_url)
+        else:
+            raise Exception("Failed to process video")
+            
+    except Exception as e:
+        sys.stderr.write(f"Error: {str(e)}\n")
         sys.exit(1)
-    
-    image_url = sys.argv[1]
-    start_time = float(sys.argv[2])
-    processed_image_url = process_video_to_image(image_url,start_time)
-    if processed_image_url:
-        print("Processed image URL:", processed_image_url)
-    else:
-        print("Failed to process image.")

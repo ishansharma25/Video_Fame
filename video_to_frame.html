@@ -72,6 +72,7 @@
         }
 
         input[type="file"] {
+            background: rgba(255, 255, 255, 0.9);
             color: #00203F;
             cursor: pointer;
         }
@@ -100,10 +101,57 @@
             border: 2px solid #ADEFD1;
         }
 
+        #processedImage {
+            margin-top: 2rem;
+            display: none;
+        }
+
+        #processedImage img {
+            max-width: 100%;
+            border-radius: 10px;
+            border: 2px solid #ADEFD1;
+        }
+
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 15px 25px;
+            border-radius: 5px;
+            color: white;
+            display: none;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        .success {
+            background-color: #4CAF50;
+        }
+
+        .error {
+            background-color: #f44336;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
         footer {
             margin-top: 2rem;
             font-size: 0.9rem;
             color: rgba(255, 255, 255, 0.7);
+        }
+
+        #emailNotification {
+            margin-top: 1rem;
+            color: #ADEFD1;
+            display: none; /* Hidden by default */
         }
     </style>
 </head>
@@ -132,7 +180,13 @@
                     Your browser does not support the video tag.
                 </video>
             </div>
+            <div id="processedImage">
+                <h2>Processed Frame</h2>
+                <img id="extractedFrame" src="" alt="Extracted frame">
+            </div>
+            <p id="emailNotification">The image has been processed. Please check your email.</p>
         </div>
+        <div id="notification" class="notification"></div>
         <footer>
             &copy; 2024 Video Frame Extractor - Designed by You
         </footer>
@@ -144,33 +198,64 @@
             const uploadedVideo = document.getElementById('uploadedVideo');
             const uploadForm = document.getElementById('uploadForm');
             const showVideoDiv = document.getElementById('show_video');
+            const processedImageDiv = document.getElementById('processedImage');
+            const extractedFrame = document.getElementById('extractedFrame');
+            const emailNotification = document.getElementById('emailNotification');
 
-            // Preview video when file is selected
+            function showNotification(message, isSuccess = true) {
+                const notification = document.getElementById('notification');
+                notification.textContent = message;
+                notification.className = `notification ${isSuccess ? 'success' : 'error'}`;
+                notification.style.display = 'block';
+                
+                setTimeout(() => {
+                    notification.style.display = 'none';
+                }, 5000);
+            }
+
             videoInput.addEventListener('change', function (event) {
                 const file = event.target.files[0];
                 if (file) {
                     const objectURL = URL.createObjectURL(file);
                     uploadedVideo.src = objectURL;
-                    showVideoDiv.style.display = 'block'; // Show the video preview
+                    showVideoDiv.style.display = 'block';
                 }
             });
 
-            // Handle form submission
             uploadForm.addEventListener('submit', function (event) {
                 event.preventDefault();
                 const formData = new FormData(uploadForm);
+                
+                // Show loading notification
+                showNotification('Processing your video...', true);
+                
                 fetch('/video_to_frame', {
                     method: 'POST',
                     body: formData
                 })
                 .then(response => response.json())
                 .then(data => {
-                    alert('Video uploaded and processed successfully!');
-                    console.log('Upload successful:', data);
+                    if (data.error) {
+                        throw new Error(data.error);
+                    }
+                    
+                    // Display processed image
+                    if (data.processedImageUrl) {
+                        extractedFrame.src = data.processedImageUrl;
+                        processedImageDiv.style.display = 'block';
+                    }
+                    
+                    // Show email status
+                    if (data.emailSent) {
+                        emailNotification.style.display = 'block'; // Show email notification
+                        showNotification('Video processed and email sent successfully!', true);
+                    } else {
+                        showNotification('Video processed but email could not be sent.', false);
+                    }
                 })
                 .catch(error => {
-                    alert('Error uploading video. Please try again.');
-                    console.error('Error uploading video:', error);
+                    showNotification(error.message || 'Error processing video. Please try again.', false);
+                    console.error('Error:', error);
                 });
             });
         });
